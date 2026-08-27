@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Les Tables Magiques ✨</title>
+<meta name="description" content="Application d'entraînement aux tables de multiplication pour enfants, avec minuteur, points et récompenses en dirhams.">
+<meta name="theme-color" content="#6c5ce7">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✖️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box}
+:root{
+  --violet:#6c5ce7; --violet-d:#5844d6;
+  --rose:#ff6b9d; --jaune:#ffd93d; --vert:#2ecc71; --vert-d:#27ae60;
+  --rouge:#ff5252; --bleu:#4dabf7; --orange:#ff922b;
+  --ink:#2d2b55; --ink-soft:#6b6a8f; --card:#ffffff; --line:#e9e6ff;
+  --r:22px; --shadow:0 10px 30px rgba(45,43,85,.12);
+}
+html,body{height:100%}
+body{
+  margin:0; font-family:'Fredoka',"Segoe UI Rounded","Comic Sans MS",system-ui,-apple-system,sans-serif;
+  color:var(--ink); background:linear-gradient(160deg,#f3f0ff 0%,#e7f6ff 45%,#fff5f8 100%);
+  background-attachment:fixed; -webkit-text-size-adjust:100%;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+button{font-family:inherit; cursor:pointer; border:none; background:none; color:inherit}
+input,select{font-family:inherit}
+.wrap{max-width:920px; margin:0 auto; padding:18px 16px 60px}
+.screen{display:none; animation:pop .28s ease}
+.screen.active{display:block}
+@keyframes pop{from{opacity:0; transform:translateY(12px)}to{opacity:1; transform:none}}
+
+h1{font-size:clamp(28px,7vw,44px); margin:.2em 0 .1em; text-align:center; letter-spacing:-.5px}
+h1 .grad{background:linear-gradient(90deg,var(--violet),var(--rose)); -webkit-background-clip:text; background-clip:text; color:transparent}
+.sub{text-align:center; color:var(--ink-soft); margin:0 0 24px; font-size:clamp(14px,3.5vw,18px)}
+h2{font-size:22px; margin:0 0 14px}
+h3{font-size:17px; margin:18px 0 8px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.06em; font-weight:600}
+
+.card{background:var(--card); border-radius:var(--r); padding:20px; box-shadow:var(--shadow); border:2px solid var(--line)}
+.card + .card{margin-top:16px}
+
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:14px 22px; border-radius:999px;
+  font-size:17px; font-weight:600; background:var(--violet); color:#fff; box-shadow:0 5px 0 var(--violet-d);
+  transition:transform .08s, box-shadow .08s; min-height:52px}
+.btn:active{transform:translateY(4px); box-shadow:0 1px 0 var(--violet-d)}
+.btn.ghost{background:#fff; color:var(--violet); border:2px solid var(--line); box-shadow:0 5px 0 var(--line)}
+.btn.ghost:active{box-shadow:0 1px 0 var(--line)}
+.btn.green{background:var(--vert); box-shadow:0 5px 0 var(--vert-d)}
+.btn.green:active{box-shadow:0 1px 0 var(--vert-d)}
+.btn.danger{background:var(--rouge); box-shadow:0 5px 0 #d63c3c}
+.btn.small{padding:9px 16px; font-size:15px; min-height:42px; box-shadow:none}
+.btn.small:active{transform:translateY(2px)}
+.btn[disabled]{opacity:.45; pointer-events:none}
+.row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+.row.center{justify-content:center}
+.spacer{flex:1}
+
+/* ---------- Accueil / profils ---------- */
+.profiles{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:14px}
+.profile{background:var(--card); border-radius:var(--r); padding:18px 12px; text-align:center; border:3px solid var(--line);
+  box-shadow:var(--shadow); transition:transform .12s, border-color .12s; width:100%}
+.profile:hover{transform:translateY(-4px); border-color:var(--violet)}
+.profile .ava{font-size:44px; line-height:1.1; display:block}
+.profile .nom{font-size:19px; font-weight:600; margin-top:6px; word-break:break-word; display:block}
+.profile .solde{margin-top:8px; display:inline-block; background:linear-gradient(90deg,var(--jaune),var(--orange));
+  color:#7a4b00; font-weight:600; padding:4px 12px; border-radius:999px; font-size:14px}
+.empty{text-align:center; color:var(--ink-soft); padding:26px 10px; font-size:16px}
+
+/* ---------- Formulaires ---------- */
+.field{margin-bottom:14px}
+.field label{display:block; font-weight:600; margin-bottom:6px; font-size:15px}
+.field .hint{font-weight:400; color:var(--ink-soft); font-size:13px}
+input[type=text],input[type=number],select{width:100%; padding:12px 14px; border-radius:14px; border:2px solid var(--line);
+  font-size:16px; background:#fbfaff; color:var(--ink)}
+input:focus,select:focus{outline:none; border-color:var(--violet)}
+.grid2{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px}
+.chips{display:flex; flex-wrap:wrap; gap:8px}
+.chip{padding:10px 0; width:52px; text-align:center; border-radius:14px; border:2px solid var(--line); background:#fbfaff;
+  font-weight:600; font-size:16px; transition:.12s}
+.chip.on{background:var(--violet); color:#fff; border-color:var(--violet); transform:scale(1.05)}
+.pill{display:inline-flex; align-items:center; gap:6px; background:#f3f0ff; color:var(--violet); padding:6px 12px;
+  border-radius:999px; font-size:14px; font-weight:600}
+
+/* ---------- Pave code ---------- */
+.lock{max-width:330px; margin:0 auto; text-align:center}
+.dots{display:flex; gap:14px; justify-content:center; margin:18px 0 22px}
+.dot{width:18px; height:18px; border-radius:50%; background:var(--line); transition:.15s}
+.dot.on{background:var(--violet); transform:scale(1.25)}
+.pad{display:grid; grid-template-columns:repeat(3,1fr); gap:12px}
+.pad button{background:#fff; border:2px solid var(--line); border-radius:18px; font-size:24px; font-weight:600; padding:16px 0;
+  box-shadow:0 4px 0 var(--line)}
+.pad button:active{transform:translateY(3px); box-shadow:0 1px 0 var(--line)}
+.shake{animation:shake .4s}
+@keyframes shake{25%{transform:translateX(-9px)}50%{transform:translateX(9px)}75%{transform:translateX(-5px)}}
+
+/* ---------- Jeu ---------- */
+.hud{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:14px}
+.tag{background:#fff; border:2px solid var(--line); border-radius:999px; padding:8px 14px; font-weight:600; font-size:15px;
+  box-shadow:0 3px 0 var(--line)}
+.tag.warn{border-color:var(--rouge); color:var(--rouge); animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.45}}
+.qcard{text-align:center; position:relative; overflow:hidden}
+.timer-ring{width:120px; height:120px; margin:0 auto 4px; position:relative}
+.timer-ring svg{transform:rotate(-90deg); width:100%; height:100%}
+.timer-ring circle{fill:none; stroke-width:11; stroke-linecap:round}
+.timer-ring .bg{stroke:var(--line)}
+.timer-ring .fg{stroke:var(--vert)}
+.timer-ring .num{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:34px; font-weight:700}
+.question{font-size:clamp(42px,12vw,68px); font-weight:700; margin:6px 0 18px; letter-spacing:2px}
+.answers{display:grid; grid-template-columns:repeat(auto-fit,minmax(96px,1fr)); gap:12px}
+.ans{padding:20px 6px; border-radius:20px; background:#fff; border:3px solid var(--line); font-size:26px; font-weight:700;
+  box-shadow:0 5px 0 var(--line); transition:transform .08s, box-shadow .08s}
+.ans:active{transform:translateY(4px); box-shadow:0 1px 0 var(--line)}
+.ans.good{background:var(--vert); border-color:var(--vert-d); color:#fff; box-shadow:0 5px 0 var(--vert-d); animation:bounce .4s}
+.ans.bad{background:var(--rouge); border-color:#d63c3c; color:#fff; box-shadow:0 5px 0 #d63c3c; animation:shake .4s}
+@keyframes bounce{40%{transform:scale(1.14)}}
+.answers.locked{pointer-events:none}
+.flash{position:fixed; inset:0; display:flex; align-items:center; justify-content:center; font-size:24vw; pointer-events:none;
+  opacity:0; z-index:50}
+.flash.go{animation:flash .6s ease-out}
+@keyframes flash{0%{opacity:0; transform:scale(.4)}30%{opacity:1; transform:scale(1)}100%{opacity:0; transform:scale(1.3)}}
+.streak{display:flex; gap:5px; justify-content:center; margin-bottom:10px; flex-wrap:wrap}
+.pip{width:12px; height:12px; border-radius:50%; background:var(--line)}
+.pip.ok{background:var(--vert)} .pip.ko{background:var(--rouge)}
+
+/* ---------- Resultat ---------- */
+.result{text-align:center}
+.result .emo{font-size:76px; line-height:1; animation:bounce 1s infinite}
+.result .titre{font-size:clamp(26px,7vw,38px); font-weight:700; margin:8px 0}
+.stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:12px; margin:20px 0}
+.stat{background:#fbfaff; border:2px solid var(--line); border-radius:18px; padding:14px 8px}
+.stat b{display:block; font-size:26px}
+.stat span{font-size:13px; color:var(--ink-soft)}
+.prize{background:linear-gradient(90deg,var(--jaune),var(--orange)); color:#7a4b00; border-radius:20px; padding:16px;
+  font-size:21px; font-weight:700; margin:14px 0}
+.confetti{position:fixed; top:-20px; font-size:22px; z-index:60; pointer-events:none; animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg); opacity:.2}}
+
+.foot{text-align:center; margin-top:26px; color:var(--ink-soft); font-size:14px}
+.foot button{text-decoration:underline; color:var(--ink-soft); font-size:14px}
+@media (max-width:420px){ .card{padding:16px} .chip{width:46px} }
+@media (prefers-reduced-motion:reduce){ *{animation-duration:.01ms !important; transition-duration:.01ms !important} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ======================= ACCUEIL ======================= -->
+<section id="scr-home" class="screen active">
+  <h1>Les <span class="grad">Tables Magiques</span> ✨</h1>
+  <p class="sub">Choisis ton profil et gagne des dirhams&nbsp;!</p>
+  <div id="profileList" class="profiles"></div>
+  <div id="noProfile" class="empty" hidden>
+    Aucun profil pour l'instant.<br>Un parent doit en créer un dans les réglages 👇
+  </div>
+  <div class="row center" style="margin-top:26px">
+    <button class="btn ghost" onclick="askCode()">🔒 Espace parent</button>
+  </div>
+  <p class="foot">Les données sont enregistrées sur cet appareil uniquement.</p>
+</section>
+
+<!-- ======================= CODE PARENT ======================= -->
+<section id="scr-code" class="screen">
+  <h1>Espace <span class="grad">parent</span></h1>
+  <p class="sub">Entre le code secret</p>
+  <div class="card lock" id="lockCard">
+    <div class="dots">
+      <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    </div>
+    <div class="pad">
+      <button onclick="tapCode('1')">1</button><button onclick="tapCode('2')">2</button><button onclick="tapCode('3')">3</button>
+      <button onclick="tapCode('4')">4</button><button onclick="tapCode('5')">5</button><button onclick="tapCode('6')">6</button>
+      <button onclick="tapCode('7')">7</button><button onclick="tapCode('8')">8</button><button onclick="tapCode('9')">9</button>
+      <button onclick="delCode()">⌫</button><button onclick="tapCode('0')">0</button><button onclick="show('home')">✖</button>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= CONFIG PARENT ======================= -->
+<section id="scr-parent" class="screen">
+  <div class="row" style="margin-bottom:12px">
+    <button class="btn ghost small" onclick="show('home')">← Retour</button>
+    <div class="spacer"></div>
+    <button class="btn small" onclick="newProfile()">＋ Nouvel enfant</button>
+  </div>
+  <h1 style="font-size:30px">Réglages <span class="grad">parent</span></h1>
+  <p class="sub">Un réglage par enfant : tables, temps, nombre de questions et récompense.</p>
+  <div id="parentList"></div>
+  <p class="foot">
+    <button onclick="exportData()">⬇ Exporter les données</button> ·
+    <button onclick="importData()">⬆ Importer</button>
+  </p>
+</section>
+
+<!-- ======================= JEU ======================= -->
+<section id="scr-game" class="screen">
+  <div class="hud">
+    <button class="btn ghost small" onclick="quitGame()">✖ Quitter</button>
+    <div class="tag" id="hudName">👦</div>
+    <div class="spacer"></div>
+    <div class="tag" id="hudQ">1 / 20</div>
+    <div class="tag" id="hudScore">⭐ 0</div>
+    <div class="tag" id="hudTotal">⏳ 5:00</div>
+  </div>
+  <div class="streak" id="streak"></div>
+  <div class="card qcard">
+    <div class="timer-ring">
+      <svg viewBox="0 0 120 120">
+        <circle class="bg" cx="60" cy="60" r="52"></circle>
+        <circle class="fg" id="ring" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="0"></circle>
+      </svg>
+      <div class="num" id="ringNum">10</div>
+    </div>
+    <div class="question" id="question">7 × 8</div>
+    <div class="answers" id="answers"></div>
+  </div>
+</section>
+
+<!-- ======================= RESULTAT ======================= -->
+<section id="scr-result" class="screen">
+  <div class="card result">
+    <div class="emo" id="resEmo">🏆</div>
+    <div class="titre" id="resTitre">Bravo !</div>
+    <p class="sub" id="resTexte" style="margin-bottom:0"></p>
+    <div class="stats">
+      <div class="stat"><b id="resBonnes">0</b><span>bonnes réponses</span></div>
+      <div class="stat"><b id="resPoints">0</b><span>points</span></div>
+      <div class="stat"><b id="resTemps">0s</b><span>temps</span></div>
+      <div class="stat"><b id="resSolde">0</b><span>dirhams au total</span></div>
+    </div>
+    <div class="prize" id="resPrize" hidden></div>
+    <div class="row center">
+      <button class="btn green" onclick="startGame(currentProfileId)">🔁 Rejouer</button>
+      <button class="btn ghost" onclick="show('home')">🏠 Accueil</button>
+    </div>
+  </div>
+</section>
+
+</div>
+<div class="flash" id="flash"></div>
+
+<script>
+/* =====================================================================
+   Les Tables Magiques - application autonome (HTML/CSS/JS)
+   Stockage : localStorage (cle "tables-magiques-v1")
+   ===================================================================== */
+const CODE_PARENT = '8213';
+const STORE = 'tables-magiques-v1';
+const AVATARS = ['🦊','🐼','🦁','🐨','🐯','🐸','🦄','🐵','🐧','🐢','🦉','🐙'];
+
+let data = load();
+let currentProfileId = null;
+
+/* ---------------- Stockage ---------------- */
+function load(){
+  try{
+    const raw = localStorage.getItem(STORE);
+    if(raw){ const d = JSON.parse(raw); if(d && Array.isArray(d.profiles)) return d; }
+  }catch(e){ console.warn('Stockage illisible', e); }
+  return { profiles: [] };
+}
+function save(){
+  try{ localStorage.setItem(STORE, JSON.stringify(data)); }
+  catch(e){ alert("Impossible d'enregistrer les donnees sur cet appareil."); }
+}
+function defaultProfile(){
+  return {
+    id: 'p' + Date.now() + Math.random().toString(36).slice(2,6),
+    nom: 'Nouvel enfant',
+    avatar: AVATARS[Math.floor(Math.random()*AVATARS.length)],
+    min: 1, max: 10,
+    tables: [7],
+    tempsQuestion: 10,      // secondes accordees par question
+    tempsTotal: 300,        // secondes accordees pour la session
+    nbQuestions: 20,
+    recompense: 5,          // dirhams par serie sans faute
+    solde: 0,
+    series: 0               // nombre de sans-faute reussis
+  };
+}
+
+/* ---------------- Navigation ---------------- */
+function show(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('scr-' + id).classList.add('active');
+  window.scrollTo(0,0);
+  if(id === 'home') renderHome();
+  if(id === 'parent') renderParent();
+}
+
+/* ---------------- Accueil ---------------- */
+function renderHome(){
+  const box = document.getElementById('profileList');
+  box.innerHTML = '';
+  document.getElementById('noProfile').hidden = data.profiles.length > 0;
+  data.profiles.forEach(p => {
+    const b = document.createElement('button');
+    b.className = 'profile';
+    b.innerHTML = '<span class="ava">' + p.avatar + '</span>' +
+                  '<span class="nom">' + esc(p.nom) + '</span>' +
+                  '<span class="solde">💰 ' + p.solde + ' DH</span>';
+    b.onclick = () => startGame(p.id);
+    box.appendChild(b);
+  });
+}
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ---------------- Code parent ---------------- */
+let codeBuf = '';
+function askCode(){ codeBuf = ''; paintDots(); show('code'); }
+function paintDots(){
+  document.querySelectorAll('#scr-code .dot').forEach((d,i) => d.classList.toggle('on', i < codeBuf.length));
+}
+function tapCode(n){
+  if(codeBuf.length >= 4) return;
+  codeBuf += n; paintDots(); beep(600, .05);
+  if(codeBuf.length === 4){
+    setTimeout(() => {
+      if(codeBuf === CODE_PARENT){ codeBuf = ''; paintDots(); show('parent'); }
+      else{
+        const c = document.getElementById('lockCard');
+        c.classList.add('shake'); beep(160,.2);
+        setTimeout(() => { c.classList.remove('shake'); codeBuf = ''; paintDots(); }, 420);
+      }
+    }, 160);
+  }
+}
+function delCode(){ codeBuf = codeBuf.slice(0,-1); paintDots(); }
+
+/* ---------------- Ecran parent ---------------- */
+function newProfile(){ data.profiles.push(defaultProfile()); save(); renderParent(); }
+
+function renderParent(){
+  const box = document.getElementById('parentList');
+  box.innerHTML = '';
+  if(!data.profiles.length){
+    box.innerHTML = '<div class="card empty">Aucun profil. Clique sur « ＋ Nouvel enfant » pour commencer.</div>';
+    return;
+  }
+  data.profiles.forEach(p => box.appendChild(profileCard(p)));
+}
+
+function profileCard(p){
+  const card = document.createElement('div');
+  card.className = 'card';
+  const mm = Math.floor(p.tempsTotal / 60), ss = p.tempsTotal % 60;
+  card.innerHTML = `
+    <div class="row" style="margin-bottom:12px">
+      <div style="font-size:38px">${p.avatar}</div>
+      <div style="flex:1; min-width:140px">
+        <input type="text" data-f="nom" value="${esc(p.nom)}" maxlength="18" aria-label="Prenom">
+      </div>
+      <button class="btn small ghost" data-a="avatar">🎭 Avatar</button>
+    </div>
+
+    <h3>Nombres à travailler</h3>
+    <div class="grid2">
+      <div class="field"><label>De <span class="hint">(multiplicateur min)</span></label>
+        <input type="number" data-f="min" min="0" max="20" value="${p.min}"></div>
+      <div class="field"><label>À <span class="hint">(multiplicateur max)</span></label>
+        <input type="number" data-f="max" min="1" max="20" value="${p.max}"></div>
+    </div>
+    <div class="field">
+      <label>Tables de multiplication <span class="hint">(une ou plusieurs)</span></label>
+      <div class="chips" data-a="tables">
+        ${[1,2,3,4,5,6,7,8,9,10,11,12].map(t =>
+          `<button class="chip ${p.tables.includes(t) ? 'on' : ''}" data-t="${t}">${t}</button>`).join('')}
+      </div>
+    </div>
+
+    <h3>Session</h3>
+    <div class="grid2">
+      <div class="field"><label>Nombre de questions</label>
+        <input type="number" data-f="nbQuestions" min="1" max="100" value="${p.nbQuestions}"></div>
+      <div class="field"><label>Temps par question <span class="hint">(s)</span></label>
+        <input type="number" data-f="tempsQuestion" min="2" max="120" value="${p.tempsQuestion}"></div>
+      <div class="field"><label>Temps total <span class="hint">(min)</span></label>
+        <input type="number" data-f="ttMin" min="0" max="60" value="${mm}"></div>
+      <div class="field"><label>Temps total <span class="hint">(s)</span></label>
+        <input type="number" data-f="ttSec" min="0" max="59" value="${ss}"></div>
+    </div>
+
+    <h3>Récompense</h3>
+    <div class="grid2">
+      <div class="field"><label>Dirhams par série sans faute</label>
+        <input type="number" data-f="recompense" min="0" max="1000" step="0.5" value="${p.recompense}"></div>
+      <div class="field"><label>Solde actuel <span class="hint">(DH, modifiable)</span></label>
+        <input type="number" data-f="solde" min="0" step="0.5" value="${p.solde}"></div>
+    </div>
+    <div class="row" style="margin-top:6px">
+      <span class="pill">🏅 ${p.series} série${p.series > 1 ? 's' : ''} sans faute</span>
+      <div class="spacer"></div>
+      <button class="btn small danger" data-a="del">🗑 Supprimer</button>
+      <button class="btn small green" data-a="save">💾 Enregistrer</button>
+    </div>
+    <div class="foot" data-a="msg" style="margin-top:8px; min-height:18px"></div>
+  `;
+
+  // Selection des tables
+  card.querySelector('[data-a=tables]').addEventListener('click', e => {
+    const chip = e.target.closest('.chip'); if(!chip) return;
+    chip.classList.toggle('on');
+  });
+  // Changement d'avatar
+  card.querySelector('[data-a=avatar]').onclick = () => {
+    p.avatar = AVATARS[(AVATARS.indexOf(p.avatar) + 1) % AVATARS.length];
+    save(); renderParent();
+  };
+  // Suppression du profil
+  card.querySelector('[data-a=del]').onclick = () => {
+    if(confirm('Supprimer le profil de ' + p.nom + ' ? Le solde sera perdu.')){
+      data.profiles = data.profiles.filter(x => x.id !== p.id); save(); renderParent();
+    }
+  };
+  // Enregistrement des reglages
+  card.querySelector('[data-a=save]').onclick = () => {
+    const g = f => card.querySelector('[data-f=' + f + ']');
+    const num = (f, def, mn, mx) => {
+      const v = parseFloat(g(f).value);
+      return isNaN(v) ? def : Math.min(mx, Math.max(mn, v));
+    };
+    const tables = [...card.querySelectorAll('[data-a=tables] .chip.on')].map(c => +c.dataset.t);
+    const msg = card.querySelector('[data-a=msg]');
+    if(!tables.length){ msg.textContent = '⚠️ Choisis au moins une table.'; return; }
+
+    let mn = Math.round(num('min', 1, 0, 20));
+    let mx = Math.round(num('max', 10, 0, 20));
+    if(mn > mx){ const t = mn; mn = mx; mx = t; }
+
+    p.nom = (g('nom').value || 'Enfant').trim().slice(0,18) || 'Enfant';
+    p.min = mn; p.max = mx; p.tables = tables;
+    p.nbQuestions   = Math.round(num('nbQuestions', 20, 1, 100));
+    p.tempsQuestion = Math.round(num('tempsQuestion', 10, 2, 120));
+    p.tempsTotal    = Math.round(num('ttMin', 5, 0, 60)) * 60 + Math.round(num('ttSec', 0, 0, 59));
+    if(p.tempsTotal < 10) p.tempsTotal = 10;
+    p.recompense = num('recompense', 5, 0, 1000);
+    p.solde      = num('solde', 0, 0, 1e6);
+    save();
+    msg.textContent = '✅ Enregistré';
+    setTimeout(renderParent, 700);
+  };
+  return card;
+}
+
+/* ---------------- Import / export ---------------- */
+function exportData(){
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'tables-magiques-sauvegarde.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+function importData(){
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'application/json';
+  inp.onchange = () => {
+    const f = inp.files[0]; if(!f) return;
+    const r = new FileReader();
+    r.onload = () => {
+      try{
+        const d = JSON.parse(r.result);
+        if(!d || !Array.isArray(d.profiles)) throw new Error('format');
+        data = d; save(); renderParent(); alert('Données importées ✅');
+      }catch(e){ alert('Fichier invalide.'); }
+    };
+    r.readAsText(f);
+  };
+  inp.click();
+}
+
+/* ---------------- Generation des questions ---------------- */
+function buildQuestions(p){
+  const combos = [];
+  p.tables.forEach(t => { for(let n = p.min; n <= p.max; n++) combos.push([t, n]); });
+  if(!combos.length) combos.push([1,1]);
+  const list = [];
+  while(list.length < p.nbQuestions){
+    shuffle(combos).forEach(c => { if(list.length < p.nbQuestions) list.push(c); });
+  }
+  return list.map(([a,b]) => {
+    const flip = Math.random() < .5;
+    return { a: flip ? b : a, b: flip ? a : b, r: a * b, choix: makeChoices(a, b) };
+  });
+}
+// 1 bonne reponse + 9 distracteurs plausibles, tries par ordre croissant
+function makeChoices(a, b){
+  const good = a * b, set = new Set();
+  const cands = [
+    a*(b+1), a*(b-1), (a+1)*b, (a-1)*b, a*(b+2), a*(b-2),
+    good+1, good-1, good+2, good-2, good+a, good-a, good+b, good-b,
+    good+10, good-10, good+5, good-5
+  ];
+  shuffle(cands).forEach(v => { if(v >= 0 && v !== good && set.size < 9) set.add(v); });
+  let guard = 0;
+  while(set.size < 9 && guard++ < 500){
+    const v = good + Math.floor(Math.random() * 21) - 10;
+    if(v >= 0 && v !== good) set.add(v);
+  }
+  return shuffle([good, ...set]).sort((x,y) => x - y);
+}
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; }
+  return a;
+}
+
+/* ---------------- Partie ---------------- */
+let G = null;                       // etat de la session en cours
+let rafId = null, totalTimerId = null;
+
+function startGame(id){
+  const p = data.profiles.find(x => x.id === id);
+  if(!p){ show('home'); return; }
+  if(!p.tables || !p.tables.length){ alert('Aucune table configurée pour ' + p.nom + '.'); return; }
+  currentProfileId = id;
+  G = {
+    p, questions: buildQuestions(p), idx: 0,
+    points: 0, bonnes: 0, fautes: 0,
+    debut: Date.now(), finSession: Date.now() + p.tempsTotal * 1000,
+    debutQuestion: 0, finQuestion: 0, verrou: false
+  };
+  document.getElementById('hudName').textContent = p.avatar + ' ' + p.nom;
+  buildStreak(G.questions.length);
+  show('game');
+  startTotalTimer();
+  nextQuestion();
+}
+
+function buildStreak(n){
+  const s = document.getElementById('streak'); s.innerHTML = '';
+  for(let i = 0; i < n; i++){ const d = document.createElement('div'); d.className = 'pip'; s.appendChild(d); }
+}
+function markStreak(i, ok){
+  const pip = document.getElementById('streak').children[i];
+  if(pip) pip.classList.add(ok ? 'ok' : 'ko');
+}
+
+function startTotalTimer(){
+  clearInterval(totalTimerId);
+  const tick = () => {
+    if(!G){ clearInterval(totalTimerId); return; }
+    const reste = Math.max(0, Math.round((G.finSession - Date.now()) / 1000));
+    const el = document.getElementById('hudTotal');
+    el.textContent = '⏳ ' + fmt(reste);
+    el.classList.toggle('warn', reste <= 15);
+    if(reste <= 0){ clearInterval(totalTimerId); endGame('temps-total'); }
+  };
+  tick();
+  totalTimerId = setInterval(tick, 250);
+}
+function fmt(s){ return Math.floor(s/60) + ':' + String(s % 60).padStart(2,'0'); }
+
+function nextQuestion(){
+  if(!G) return;
+  if(G.idx >= G.questions.length){ endGame('fin'); return; }
+  const q = G.questions[G.idx];
+  G.verrou = false;
+  document.getElementById('hudQ').textContent = (G.idx + 1) + ' / ' + G.questions.length;
+  document.getElementById('hudScore').textContent = '⭐ ' + G.points;
+  document.getElementById('question').textContent = q.a + ' × ' + q.b;
+
+  const box = document.getElementById('answers');
+  box.className = 'answers';
+  box.innerHTML = '';
+  q.choix.forEach(v => {
+    const b = document.createElement('button');
+    b.className = 'ans'; b.textContent = v;
+    b.onclick = () => answer(b, v);
+    box.appendChild(b);
+  });
+
+  G.debutQuestion = Date.now();
+  G.finQuestion = G.debutQuestion + G.p.tempsQuestion * 1000;
+  runRing();
+}
+
+// Minuteur visuel circulaire de la question en cours
+function runRing(){
+  const ring = document.getElementById('ring'), num = document.getElementById('ringNum');
+  const C = 2 * Math.PI * 52;
+  cancelAnimationFrame(rafId);
+  const step = () => {
+    if(!G || G.verrou) return;
+    const reste = G.finQuestion - Date.now();
+    const ratio = Math.max(0, reste / (G.p.tempsQuestion * 1000));
+    ring.style.strokeDashoffset = (C * (1 - ratio)).toFixed(1);
+    ring.style.stroke = ratio > .5 ? 'var(--vert)' : ratio > .25 ? 'var(--orange)' : 'var(--rouge)';
+    num.textContent = Math.max(0, Math.ceil(reste / 1000));
+    if(reste <= 0){ timeout(); return; }
+    rafId = requestAnimationFrame(step);
+  };
+  step();
+}
+
+function answer(btn, val){
+  if(!G || G.verrou) return;
+  G.verrou = true;
+  cancelAnimationFrame(rafId);
+  const q = G.questions[G.idx];
+  const secs = (Date.now() - G.debutQuestion) / 1000;
+  const juste = val === q.r;
+  document.getElementById('answers').classList.add('locked');
+
+  if(juste){
+    const gain = secs < 3 ? 3 : secs < 6 ? 2 : 1;   // reponse rapide = plus de points
+    G.points += gain; G.bonnes++;
+    btn.classList.add('good');
+    flash(gain === 3 ? '🚀' : '✅');
+    beep(880,.08); setTimeout(() => beep(1320,.1), 90);
+  }else{
+    G.points = Math.max(0, G.points - 1); G.fautes++;   // faute = -1 point
+    btn.classList.add('bad');
+    showGood(q.r);
+    flash('❌'); beep(200,.25);
+    if(navigator.vibrate) navigator.vibrate(120);
+  }
+  markStreak(G.idx, juste);
+  document.getElementById('hudScore').textContent = '⭐ ' + G.points;
+  G.idx++;
+  setTimeout(nextQuestion, juste ? 620 : 1100);
+}
+
+function timeout(){
+  if(!G || G.verrou) return;
+  G.verrou = true;
+  G.fautes++;
+  document.getElementById('answers').classList.add('locked');
+  showGood(G.questions[G.idx].r);
+  flash('⏰'); beep(200,.3);
+  markStreak(G.idx, false);
+  G.idx++;
+  setTimeout(nextQuestion, 1100);
+}
+
+function showGood(r){
+  const b = [...document.querySelectorAll('.ans')].find(x => +x.textContent === r);
+  if(b) b.classList.add('good');
+}
+
+function flash(txt){
+  const f = document.getElementById('flash');
+  f.textContent = txt; f.classList.remove('go');
+  void f.offsetWidth;              // relance l'animation
+  f.classList.add('go');
+}
+
+function quitGame(){
+  if(!confirm('Quitter la session ? La progression sera perdue.')) return;
+  stopTimers(); G = null; show('home');
+}
+function stopTimers(){ cancelAnimationFrame(rafId); clearInterval(totalTimerId); }
+
+function endGame(cause){
+  if(!G) return;
+  stopTimers();
+  const p = G.p;
+  const duree = Math.round((Date.now() - G.debut) / 1000);
+  const sansFaute = G.fautes === 0 && G.idx >= G.questions.length && cause !== 'temps-total';
+  let gagne = 0;
+  if(sansFaute){
+    gagne = p.recompense;
+    p.solde = Math.round((p.solde + gagne) * 100) / 100;
+    p.series++;
+    save();
+  }
+  document.getElementById('resEmo').textContent = sansFaute ? '🏆' : (cause === 'temps-total' ? '⏰' : '💪');
+  document.getElementById('resTitre').textContent = sansFaute ? 'Sans faute, bravo !'
+      : (cause === 'temps-total' ? 'Temps écoulé !' : 'Presque !');
+  document.getElementById('resTexte').textContent = sansFaute
+      ? p.nom + ' a réussi toutes les questions dans le temps imparti 🎉'
+      : (cause === 'temps-total'
+          ? 'Le temps total de la session est écoulé. Réessaie pour décrocher la récompense !'
+          : G.fautes + (G.fautes > 1 ? ' erreurs' : ' erreur') + ' — il faut un sans-faute complet pour gagner les dirhams. On retente ?');
+  document.getElementById('resBonnes').textContent = G.bonnes + ' / ' + G.questions.length;
+  document.getElementById('resPoints').textContent = G.points;
+  document.getElementById('resTemps').textContent  = fmt(duree);
+  document.getElementById('resSolde').textContent  = p.solde + ' DH';
+  const prize = document.getElementById('resPrize');
+  prize.hidden = !sansFaute;
+  if(sansFaute){
+    prize.textContent = '💰 + ' + gagne + ' dirhams gagnés !';
+    confetti(); fanfare();
+  }
+  G = null;
+  show('result');
+}
+
+/* ---------------- Effets ---------------- */
+function confetti(){
+  const emojis = ['🎉','⭐','💰','🎊','✨','🏆','🌟'];
+  for(let i = 0; i < 40; i++){
+    const d = document.createElement('div');
+    d.className = 'confetti';
+    d.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    d.style.left = Math.random() * 100 + 'vw';
+    d.style.animationDuration = (2 + Math.random() * 2) + 's';
+    d.style.animationDelay = (Math.random() * .8) + 's';
+    document.body.appendChild(d);
+    setTimeout(() => d.remove(), 5200);
+  }
+}
+let audioCtx = null;
+function beep(freq, dur){
+  try{
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = 'triangle'; o.frequency.value = freq;
+    g.gain.setValueAtTime(.09, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.0001, audioCtx.currentTime + dur);
+    o.connect(g).connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + dur);
+  }catch(e){ /* audio indisponible : on continue sans son */ }
+}
+function fanfare(){ [523,659,784,1046].forEach((f,i) => setTimeout(() => beep(f,.22), i * 150)); }
+
+/* ---------------- Demarrage ---------------- */
+if(!data.profiles.length){          // profil d'exemple au premier lancement
+  const demo = defaultProfile();
+  demo.nom = 'Amine'; demo.avatar = '🦊'; demo.tables = [2,5]; demo.nbQuestions = 10;
+  data.profiles.push(demo); save();
+}
+renderHome();
+document.addEventListener('keydown', e => {
+  if(!document.getElementById('scr-code').classList.contains('active')) return;
+  if(/^[0-9]$/.test(e.key)) tapCode(e.key);
+  if(e.key === 'Backspace') delCode();
+});
+</script>
+</body>
+</html>
