@@ -6,8 +6,8 @@ protégé par code, minuteurs, système de points et **récompenses en dirhams**
 👉 **Application en ligne : https://VOTRE-COMPTE.github.io/multiplication/**
 *(remplacez `VOTRE-COMPTE` par votre pseudo GitHub une fois le dépôt publié)*
 
-Tout tient dans un seul fichier autonome : [`index.html`](index.html) — aucune installation,
-aucun serveur, aucune dépendance.
+L'interface tient dans un seul fichier autonome : [`index.html`](index.html). L'application est
+aussi une **PWA installable** sur téléphone et tablette, et fonctionne ensuite **hors connexion**.
 
 ## Fonctionnalités
 
@@ -35,6 +35,24 @@ aucun serveur, aucune dépendance.
 - Animations, confettis, sons de réussite, retour visuel immédiat
 - Responsive : téléphone, tablette, ordinateur
 
+## Installer sur mobile
+
+Ouvrez l'adresse du site dans le navigateur du téléphone, puis :
+
+- **Android (Chrome, Edge, Samsung Internet)** : bouton **« 📲 Installer l'appli »** sur l'écran
+  d'accueil de l'application (ou menu ⋮ → « Installer l'application »).
+- **iPhone / iPad (Safari)** : bouton **Partager** → **« Sur l'écran d'accueil »**. Le bouton
+  d'installation de l'application rappelle la manipulation.
+- **Ordinateur (Chrome, Edge)** : icône d'installation dans la barre d'adresse.
+
+L'application s'ouvre alors en plein écran avec sa propre icône, et démarre **sans connexion** :
+le service worker ([`sw.js`](sw.js)) met en cache l'interface et les icônes.
+Fichiers concernés : [`manifest.webmanifest`](manifest.webmanifest), [`sw.js`](sw.js) et le dossier
+`icons/` (régénérable avec `python tools/make-icons.py`, nécessite Pillow).
+
+> ⚠️ L'installation exige **HTTPS** : elle fonctionne depuis l'adresse GitHub Pages, mais pas en
+> ouvrant `index.html` en local (`file://`), où le bouton d'installation reste masqué.
+
 ## Données
 
 Tout est enregistré dans le `localStorage` du navigateur (clé `tables-magiques-v1`) :
@@ -49,9 +67,12 @@ chaque `git push` sur `main` redéploie automatiquement la racine du dépôt.
 
 Activation, une seule fois : **Settings → Pages → Build and deployment → Source : GitHub Actions**.
 
+Après une modification de l'application, incrémentez `VERSION` dans [`sw.js`](sw.js) : les appareils
+déjà installés récupèrent ainsi la nouvelle version au lancement suivant.
+
 ## En local
 
-Ouvrez simplement `index.html` dans un navigateur (double-clic), ou :
+Ouvrez simplement `index.html` dans un navigateur (double-clic), ou, pour tester la partie PWA :
 
 ```bash
 python -m http.server 8000   # puis http://localhost:8000

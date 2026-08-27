@@ -6,7 +6,13 @@
 <title>Les Tables Magiques ✨</title>
 <meta name="description" content="Application d'entraînement aux tables de multiplication pour enfants, avec minuteur, points et récompenses en dirhams.">
 <meta name="theme-color" content="#6c5ce7">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✖️</text></svg>">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Tables Magiques">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -26,7 +32,7 @@ body{
   background-attachment:fixed; -webkit-text-size-adjust:100%;
   padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
-button{font-family:inherit; cursor:pointer; border:none; background:none; color:inherit}
+button{font-family:inherit; cursor:pointer; border:none; background:none; color:inherit; touch-action:manipulation}
 input,select{font-family:inherit}
 .wrap{max-width:920px; margin:0 auto; padding:18px 16px 60px}
 .screen{display:none; animation:pop .28s ease}
@@ -139,6 +145,8 @@ input:focus,select:focus{outline:none; border-color:var(--violet)}
 .confetti{position:fixed; top:-20px; font-size:22px; z-index:60; pointer-events:none; animation:fall linear forwards}
 @keyframes fall{to{transform:translateY(110vh) rotate(720deg); opacity:.2}}
 
+.install{max-width:460px; margin:18px auto 0; text-align:center; font-size:15px}
+.install p{color:var(--ink-soft); margin:8px 0 14px; line-height:1.5}
 .foot{text-align:center; margin-top:26px; color:var(--ink-soft); font-size:14px}
 .foot button{text-decoration:underline; color:var(--ink-soft); font-size:14px}
 @media (max-width:420px){ .card{padding:16px} .chip{width:46px} }
@@ -158,6 +166,12 @@ input:focus,select:focus{outline:none; border-color:var(--violet)}
   </div>
   <div class="row center" style="margin-top:26px">
     <button class="btn ghost" onclick="askCode()">🔒 Espace parent</button>
+    <button class="btn" id="btnInstall" hidden onclick="installer()">📲 Installer l'appli</button>
+  </div>
+  <div class="card install" id="aideInstall" hidden>
+    <b>Installer sur l'écran d'accueil</b>
+    <p id="aideInstallTexte"></p>
+    <button class="btn ghost small" onclick="document.getElementById('aideInstall').hidden = true">D'accord</button>
   </div>
   <p class="foot">Les données sont enregistrées sur cet appareil uniquement.</p>
 </section>
@@ -743,6 +757,51 @@ function beep(freq, dur){
 }
 function fanfare(){ [523,659,784,1046].forEach((f,i) => setTimeout(() => beep(f,.22), i * 150)); }
 
+/* ---------------- Installation sur mobile (PWA) ---------------- */
+let promptInstall = null;
+
+function enAppli(){                       // deja lancee depuis l'ecran d'accueil ?
+  return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+}
+function majBoutonInstall(){
+  const b = document.getElementById('btnInstall');
+  if(b) b.hidden = enAppli() || location.protocol === 'file:';
+}
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();                     // on declenche l'invite depuis notre bouton
+  promptInstall = e;
+  majBoutonInstall();
+});
+window.addEventListener('appinstalled', () => {
+  promptInstall = null;
+  document.getElementById('aideInstall').hidden = true;
+  majBoutonInstall();
+});
+
+async function installer(){
+  if(promptInstall){                      // Chrome, Edge, Samsung Internet, Android
+    promptInstall.prompt();
+    const res = await promptInstall.userChoice;
+    if(res && res.outcome === 'accepted') promptInstall = null;
+    majBoutonInstall();
+    return;
+  }
+  // Navigateurs sans invite native (iOS / iPadOS, Firefox) : mode d'emploi
+  const ua = navigator.userAgent;
+  const ios = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  document.getElementById('aideInstallTexte').textContent = ios
+    ? "Dans Safari : touche le bouton Partager (le carré avec une flèche), puis choisis « Sur l'écran d'accueil »."
+    : "Dans le menu de ton navigateur (⋮), choisis « Installer l'application » ou « Ajouter à l'écran d'accueil ».";
+  document.getElementById('aideInstall').hidden = false;
+}
+
+// Mise en cache de l'application : lancement possible sans connexion
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(e => console.warn('Service worker non enregistré', e));
+  });
+}
+
 /* ---------------- Demarrage ---------------- */
 if(!data.profiles.length){          // profil d'exemple au premier lancement
   const demo = defaultProfile();
@@ -750,6 +809,7 @@ if(!data.profiles.length){          // profil d'exemple au premier lancement
   data.profiles.push(demo); save();
 }
 renderHome();
+majBoutonInstall();
 document.addEventListener('keydown', e => {
   if(!document.getElementById('scr-code').classList.contains('active')) return;
   if(/^[0-9]$/.test(e.key)) tapCode(e.key);
