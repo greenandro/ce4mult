@@ -228,7 +228,7 @@ input:focus,select:focus{outline:none; border-color:var(--violet)}
 <!-- ======================= JEU ======================= -->
 <section id="scr-game" class="screen">
   <div class="hud">
-    <button class="btn ghost small" onclick="quitGame()">✖ Quitter</button>
+    <button class="btn ghost small" id="btnQuitter" onclick="quitGame()">✖ Quitter</button>
     <div class="tag" id="hudName">👦</div>
     <div class="spacer"></div>
     <div class="tag" id="hudQ">1 / 20</div>
@@ -319,12 +319,10 @@ function defaultProfile(){
     recompense: 5,          // dirhams par serie sans faute
     solde: 0,
     series: 0,              // nombre de sans-faute reussis
-    quitsParJour: 1,        // abandons autorises par journee
-    bonusPourcent: 60,      // seuil de bonnes reponses (%) donnant droit au bonus du jour
-    bonusJour: 2,           // dirhams verses une seule fois par jour si le seuil est depasse
+    quitsParJour: 1,        // droits d'abandon accordes en debut de journee
+    seuilQuit: 75,          // % de bonnes reponses qui redonne le droit d'abandonner
     jour: '',               // journee suivie (AAAA-MM-JJ)
-    quitsUtilises: 0,       // abandons deja utilises aujourd'hui
-    bonusVerse: false       // bonus du jour deja credite aujourd'hui
+    quitsDispo: 1           // droits d'abandon encore disponibles aujourd'hui
   };
 }
 
@@ -452,13 +450,11 @@ function profileCard(p, i){
     <div class="grid2">
       <div class="field"><label>Abandons autorisés par jour <span class="hint">(0 = interdit)</span></label>
         <input type="number" data-f="quitsParJour" min="0" max="${QUITS_MAX}" value="${quitsParJour(p)}"></div>
-      <div class="field"><label>Bonus du jour au-delà de <span class="hint">(% de bonnes réponses)</span></label>
-        <input type="number" data-f="bonusPourcent" min="0" max="100" value="${bonusPourcent(p)}"></div>
-      <div class="field"><label>Montant du bonus du jour <span class="hint">(DH, 0 = désactivé)</span></label>
-        <input type="number" data-f="bonusJour" min="0" max="1000" step="0.5" value="${bonusJour(p)}"></div>
+      <div class="field"><label>Abandon regagné au-delà de <span class="hint">(% de bonnes réponses)</span></label>
+        <input type="number" data-f="seuilQuit" min="0" max="100" value="${seuilQuit(p)}"></div>
     </div>
     <div class="row">
-      <span class="pill">📅 aujourd'hui : ${p.quitsUtilises || 0}/${quitsParJour(p)} abandon${quitsParJour(p) > 1 ? 's' : ''} · bonus ${p.bonusVerse ? 'versé ✅' : 'pas encore versé'}</span>
+      <span class="pill">📅 aujourd'hui : ${quitsDispo(p)}/${quitsParJour(p)} abandon${quitsParJour(p) > 1 ? 's' : ''} disponible${quitsDispo(p) > 1 ? 's' : ''}</span>
       <button class="btn small ghost" data-a="reset">♻ Réinitialiser la journée</button>
     </div>
 
@@ -482,9 +478,9 @@ function profileCard(p, i){
     p.avatar = AVATARS[(AVATARS.indexOf(p.avatar) + 1) % AVATARS.length];
     save(); renderParent();
   };
-  // Remise a zero des compteurs du jour (abandon utilise, bonus deja verse)
+  // Redonne a l'enfant ses droits d'abandon du jour
   card.querySelector('[data-a=reset]').onclick = () => {
-    p.jour = aujourdhui(); p.quitsUtilises = 0; p.bonusVerse = false;
+    p.jour = aujourdhui(); p.quitsDispo = quitsParJour(p);
     save(); renderParent();
   };
   // Duplication : memes reglages, nouvel enfant (solde et series repartent a zero)
@@ -494,7 +490,7 @@ function profileCard(p, i){
       nom: 'Enfant ' + (data.profiles.length + 1),
       avatar: AVATARS[(AVATARS.indexOf(p.avatar) + 1) % AVATARS.length],
       tables: p.tables.slice(),
-      solde: 0, series: 0
+      solde: 0, series: 0, jour: '', quitsDispo: quitsParJour(p)
     });
     data.profiles.push(copie); save(); renderParent();
   };
@@ -525,8 +521,8 @@ function profileCard(p, i){
     p.nbChoix       = Math.round(num('nbChoix', 10, NB_CHOIX_MIN, NB_CHOIX_MAX));
     p.pauseErreur   = num('pauseErreur', 1.5, PAUSE_MIN, PAUSE_MAX);
     p.quitsParJour  = Math.round(num('quitsParJour', 1, 0, QUITS_MAX));
-    p.bonusPourcent = Math.round(num('bonusPourcent', 60, 0, 100));
-    p.bonusJour     = num('bonusJour', 2, 0, 1000);
+    p.seuilQuit     = Math.round(num('seuilQuit', 75, 0, 100));
+    if(quitsDispo(p) > p.quitsParJour) p.quitsDispo = p.quitsParJour;
     p.tempsQuestion = Math.round(num('tempsQuestion', 10, 2, 120));
     p.tempsTotal    = Math.round(num('ttMin', 5, 0, 60)) * 60 + Math.round(num('ttSec', 0, 0, 59));
     if(p.tempsTotal < 10) p.tempsTotal = 10;
@@ -591,25 +587,24 @@ function aujourdhui(){
   const d = new Date();
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
-// Remet a zero les compteurs quotidiens au changement de jour
+// Rend les droits d'abandon au changement de jour
 function majJour(p){
   if(p.jour === aujourdhui()) return;
   p.jour = aujourdhui();
-  p.quitsUtilises = 0;
-  p.bonusVerse = false;
+  p.quitsDispo = quitsParJour(p);
   save();
 }
 function quitsParJour(p){
   const v = Math.round(parseFloat(p.quitsParJour));
   return isNaN(v) ? 1 : Math.min(QUITS_MAX, Math.max(0, v));
 }
-function bonusPourcent(p){
-  const v = Math.round(parseFloat(p.bonusPourcent));
-  return isNaN(v) ? 60 : Math.min(100, Math.max(0, v));
+function seuilQuit(p){
+  const v = Math.round(parseFloat(p.seuilQuit));
+  return isNaN(v) ? 75 : Math.min(100, Math.max(0, v));
 }
-function bonusJour(p){
-  const v = parseFloat(p.bonusJour);
-  return isNaN(v) ? 2 : Math.min(1000, Math.max(0, v));
+function quitsDispo(p){
+  const v = Math.round(parseFloat(p.quitsDispo));
+  return isNaN(v) ? quitsParJour(p) : Math.max(0, v);
 }
 
 // Pause apres une erreur, en secondes (profils crees avant cette option : 1.5 s)
@@ -659,6 +654,7 @@ function startGame(id){
     pauseKO: Math.round(pauseErreur(p) * 1000)   // pause apres une erreur, en ms
   };
   document.getElementById('hudName').textContent = p.avatar + ' ' + p.nom;
+  majBoutonQuitter(p);
   buildStreak(G.questions.length);
   show('game');
   startTotalTimer();
@@ -796,23 +792,21 @@ function flash(txt){
   f.classList.add('go');
 }
 
-// Abandon : autorise un nombre limite de fois par journee (1 par defaut)
+// Le bouton "Quitter" n'est visible que si l'enfant a encore un droit d'abandon
+function majBoutonQuitter(p){
+  document.getElementById('btnQuitter').hidden = quitsDispo(p) <= 0;
+}
 function quitGame(){
   if(!G) return;
   const p = G.p;
   majJour(p);
-  const max = quitsParJour(p);
-  const reste = max - p.quitsUtilises;
-  if(reste <= 0){
-    alert(max === 0
-      ? "Il faut aller jusqu'au bout de la série ! 💪"
-      : "Tu as déjà quitté une partie aujourd'hui. Cette fois, il faut aller jusqu'au bout ! 💪");
-    return;
-  }
-  const suite = reste > 1 ? "Il te restera " + (reste - 1) + " abandons aujourd'hui."
-                          : "Ce sera ton seul abandon de la journée.";
+  if(quitsDispo(p) <= 0){ majBoutonQuitter(p); return; }
+  const reste = quitsDispo(p) - 1;
+  const suite = reste > 0
+    ? "Il te restera " + reste + " abandon" + (reste > 1 ? 's' : '') + " aujourd'hui."
+    : "Le bouton disparaîtra ensuite : pour le retrouver, il faudra dépasser " + seuilQuit(p) + " % de bonnes réponses.";
   if(!confirm('Quitter la session ? La progression sera perdue.\n' + suite)) return;
-  p.quitsUtilises++;
+  p.quitsDispo = reste;
   save();
   stopTimers(); G = null; show('home');
 }
@@ -830,17 +824,17 @@ function endGame(cause){
     p.solde = Math.round((p.solde + gagne) * 100) / 100;
     p.series++;
   }
-  // Bonus du jour : au-dela du seuil de bonnes reponses, une seule fois par journee
+  // Au-dela du seuil, l'enfant recupere son droit d'abandonner une session
   majJour(p);
   const pourcent = G.questions.length ? Math.round(G.bonnes / G.questions.length * 100) : 0;
-  const seuil = bonusPourcent(p), montantBonus = bonusJour(p);
-  let bonus = 0;
-  if(pourcent > seuil && montantBonus > 0 && !p.bonusVerse){
-    bonus = montantBonus;
-    p.solde = Math.round((p.solde + bonus) * 100) / 100;
-    p.bonusVerse = true;
+  const seuil = seuilQuit(p), maxQuits = quitsParJour(p);
+  const avant = quitsDispo(p);
+  let quitRendu = false;
+  if(pourcent > seuil && maxQuits > 0 && avant < maxQuits){
+    p.quitsDispo = maxQuits;
+    quitRendu = true;
   }
-  if(sansFaute || bonus) save();
+  if(sansFaute || quitRendu) save();
   document.getElementById('resEmo').textContent = sansFaute ? '🏆' : (cause === 'temps-total' ? '⏰' : '💪');
   document.getElementById('resTitre').textContent = sansFaute ? 'Sans faute, bravo !'
       : (cause === 'temps-total' ? 'Temps écoulé !' : 'Presque !');
@@ -857,16 +851,16 @@ function endGame(cause){
   prize.hidden = !sansFaute;
   if(sansFaute) prize.textContent = '💰 + ' + gagne + ' dirhams gagnés !';
 
-  // Ligne du bonus du jour
+  // Ligne sur le droit d'abandon
   const bloc = document.getElementById('resBonus');
-  bloc.hidden = montantBonus <= 0;
+  bloc.hidden = maxQuits <= 0;
   if(!bloc.hidden){
-    if(bonus) bloc.textContent = '🎯 ' + pourcent + ' % de bonnes réponses — bonus du jour : + ' + bonus + ' DH !';
-    else if(pourcent > seuil) bloc.textContent = '🎯 ' + pourcent + ' % de bonnes réponses — bonus du jour déjà obtenu aujourd\'hui 👍';
-    else bloc.textContent = '🎯 ' + pourcent + ' % de bonnes réponses — il en faut plus de ' + seuil + ' % pour le bonus du jour';
-    bloc.classList.toggle('gagne', bonus > 0);
+    if(quitRendu) bloc.textContent = '🔓 ' + pourcent + ' % de bonnes réponses — le bouton « Quitter » est réactivé !';
+    else if(quitsDispo(p) > 0) bloc.textContent = '🎯 ' + pourcent + ' % de bonnes réponses — le bouton « Quitter » est disponible 👍';
+    else bloc.textContent = '🔒 ' + pourcent + ' % de bonnes réponses — le bouton « Quitter » reste bloqué : il faut dépasser ' + seuil + ' %';
+    bloc.classList.toggle('gagne', quitRendu);
   }
-  if(sansFaute || bonus){ confetti(); fanfare(); }
+  if(sansFaute) { confetti(); fanfare(); }
   afficherRevision(G.erreurs);
   G = null;
   show('result');

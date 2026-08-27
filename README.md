@@ -21,9 +21,9 @@ aussi une **PWA installable** sur téléphone et tablette, et fonctionne ensuite
 - Nombre de réponses proposées par question (de 2 à 12)
 - Durée de la pause après une erreur, pendant laquelle la bonne réponse reste affichée (0 à 10 s)
 - Montant de la récompense en dirhams pour chaque série réussie sans faute
-- **Abandons autorisés par jour** (1 par défaut, 0 pour interdire complètement de quitter une partie)
-- **Bonus du jour** : seuil de bonnes réponses (60 % par défaut) et montant en dirhams, versé
-  une seule fois par journée ; compteurs du jour visibles, avec un bouton de remise à zéro
+- **Abandons accordés par jour** (1 par défaut, 0 pour interdire complètement de quitter une partie)
+- **Seuil de réactivation** du bouton « Quitter » (75 % de bonnes réponses par défaut) ;
+  état du jour visible, avec un bouton de remise à zéro
 - Solde de dirhams visible et modifiable
 - Export / import des données en JSON (sauvegarde ou transfert d'appareil)
 
@@ -36,10 +36,9 @@ aussi une **PWA installable** sur téléphone et tablette, et fonctionne ensuite
   une erreur coûte 1 point et casse la série
 - Après une erreur ou un temps écoulé, la bonne réponse s'affiche en vert pendant la durée réglée par le parent
 - Récompense versée si la session est **entièrement sans faute** dans le temps imparti
-- **Bonus du jour** : au-delà du seuil de bonnes réponses (60 % par défaut), le solde est crédité
-  du montant du bonus — **une seule fois par journée**, même en jouant plusieurs sessions
-- Le bouton « Quitter » n'est utilisable qu'un nombre limité de fois par jour (1 par défaut) ;
-  ensuite l'enfant doit aller au bout de la série (la session reste bornée par le temps total)
+- **Bouton « Quitter »** : disponible une fois par jour (par défaut). Une fois utilisé, il
+  **disparaît** pour les sessions suivantes, et n'est **réactivé qu'en dépassant 75 %** de bonnes
+  réponses sur une session (seuil réglable). La session reste de toute façon bornée par le temps total.
 - En fin de session, **récapitulatif « À revoir »** des multiplications ratées : le calcul, la bonne
   réponse en vert et la réponse donnée barrée en rouge (ou « pas de réponse » si le temps a expiré)
 - Animations, confettis, sons de réussite, retour visuel immédiat

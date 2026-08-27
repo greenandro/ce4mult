@@ -1,7 +1,7 @@
 /* Service worker de « Les Tables Magiques ».
    Rend l'application installable et utilisable hors connexion.
    Bumper VERSION a chaque mise en ligne pour forcer le rafraichissement. */
-const VERSION = 'v3';
+const VERSION = 'v4';
 const CACHE = 'tables-magiques-' + VERSION;
 
 // Chemins relatifs au scope : fonctionne aussi sous /nom-du-depot/
