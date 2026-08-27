@@ -87,6 +87,8 @@ input:focus,select:focus{outline:none; border-color:var(--violet)}
 .chip{padding:10px 0; width:52px; text-align:center; border-radius:14px; border:2px solid var(--line); background:#fbfaff;
   font-weight:600; font-size:16px; transition:.12s}
 .chip.on{background:var(--violet); color:#fff; border-color:var(--violet); transform:scale(1.05)}
+.numero{display:inline-block; background:var(--violet); color:#fff; font-size:13px; font-weight:600;
+  padding:3px 12px; border-radius:999px; margin-bottom:10px; letter-spacing:.04em}
 .pill{display:inline-flex; align-items:center; gap:6px; background:#f3f0ff; color:var(--violet); padding:6px 12px;
   border-radius:999px; font-size:14px; font-weight:600}
 
@@ -358,14 +360,21 @@ function renderParent(){
     box.innerHTML = '<div class="card empty">Aucun profil. Clique sur « ＋ Nouvel enfant » pour commencer.</div>';
     return;
   }
-  data.profiles.forEach(p => box.appendChild(profileCard(p)));
+  const n = data.profiles.length;
+  const info = document.createElement('p');
+  info.className = 'foot';
+  info.style.margin = '0 0 12px';
+  info.textContent = n + ' profil' + (n > 1 ? 's' : '') + ' — chacun a ses propres tables, temps et récompense.';
+  box.appendChild(info);
+  data.profiles.forEach((p, i) => box.appendChild(profileCard(p, i)));
 }
 
-function profileCard(p){
+function profileCard(p, i){
   const card = document.createElement('div');
   card.className = 'card';
   const mm = Math.floor(p.tempsTotal / 60), ss = p.tempsTotal % 60;
   card.innerHTML = `
+    <div class="numero">Enfant ${i + 1}</div>
     <div class="row" style="margin-bottom:12px">
       <div style="font-size:38px">${p.avatar}</div>
       <div style="flex:1; min-width:140px">
@@ -415,6 +424,7 @@ function profileCard(p){
     <div class="row" style="margin-top:6px">
       <span class="pill">🏅 ${p.series} série${p.series > 1 ? 's' : ''} sans faute</span>
       <div class="spacer"></div>
+      <button class="btn small ghost" data-a="copie" title="Créer un autre enfant avec les mêmes réglages">⧉ Dupliquer</button>
       <button class="btn small danger" data-a="del">🗑 Supprimer</button>
       <button class="btn small green" data-a="save">💾 Enregistrer</button>
     </div>
@@ -430,6 +440,17 @@ function profileCard(p){
   card.querySelector('[data-a=avatar]').onclick = () => {
     p.avatar = AVATARS[(AVATARS.indexOf(p.avatar) + 1) % AVATARS.length];
     save(); renderParent();
+  };
+  // Duplication : memes reglages, nouvel enfant (solde et series repartent a zero)
+  card.querySelector('[data-a=copie]').onclick = () => {
+    const copie = Object.assign({}, p, {
+      id: defaultProfile().id,
+      nom: 'Enfant ' + (data.profiles.length + 1),
+      avatar: AVATARS[(AVATARS.indexOf(p.avatar) + 1) % AVATARS.length],
+      tables: p.tables.slice(),
+      solde: 0, series: 0
+    });
+    data.profiles.push(copie); save(); renderParent();
   };
   // Suppression du profil
   card.querySelector('[data-a=del]').onclick = () => {

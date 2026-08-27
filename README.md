@@ -12,7 +12,8 @@ aussi une **PWA installable** sur téléphone et tablette, et fonctionne ensuite
 ## Fonctionnalités
 
 **Espace parent** (code secret : `8213`)
-- Plusieurs profils enfants (prénom, avatar), chacun avec ses propres réglages
+- Autant de profils enfants que nécessaire (prénom, avatar), **chacun avec ses propres réglages** ;
+  bouton « ⧉ Dupliquer » pour créer un frère ou une sœur avec les mêmes réglages
 - Intervalle de nombres (ex. de 1 à 10) et tables à travailler (1 à 12, plusieurs possibles)
 - Temps accordé par question (en secondes)
 - Temps total accordé pour la session (minutes + secondes)
