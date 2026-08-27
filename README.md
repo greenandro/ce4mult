@@ -33,6 +33,8 @@ aussi une **PWA installable** sur téléphone et tablette, et fonctionne ensuite
   une erreur coûte 1 point et casse la série
 - Après une erreur ou un temps écoulé, la bonne réponse s'affiche en vert pendant la durée réglée par le parent
 - Récompense versée uniquement si la session est **entièrement sans faute** dans le temps imparti
+- En fin de session, **récapitulatif « À revoir »** des multiplications ratées : le calcul, la bonne
+  réponse en vert et la réponse donnée barrée en rouge (ou « pas de réponse » si le temps a expiré)
 - Animations, confettis, sons de réussite, retour visuel immédiat
 - Responsive : téléphone, tablette, ordinateur
 
