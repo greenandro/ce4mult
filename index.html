@@ -110,7 +110,7 @@ input:focus,select:focus{outline:none; border-color:var(--violet)}
 .timer-ring .fg{stroke:var(--vert)}
 .timer-ring .num{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:34px; font-weight:700}
 .question{font-size:clamp(42px,12vw,68px); font-weight:700; margin:6px 0 18px; letter-spacing:2px}
-.answers{display:grid; grid-template-columns:repeat(auto-fit,minmax(96px,1fr)); gap:12px}
+.answers{display:grid; grid-template-columns:repeat(auto-fit,minmax(96px,1fr)); gap:12px; margin:0 auto}
 .ans{padding:20px 6px; border-radius:20px; background:#fff; border:3px solid var(--line); font-size:26px; font-weight:700;
   box-shadow:0 5px 0 var(--line); transition:transform .08s, box-shadow .08s}
 .ans:active{transform:translateY(4px); box-shadow:0 1px 0 var(--line)}
@@ -249,6 +249,7 @@ input:focus,select:focus{outline:none; border-color:var(--violet)}
    ===================================================================== */
 const CODE_PARENT = '8213';
 const STORE = 'tables-magiques-v1';
+const NB_CHOIX_MIN = 2, NB_CHOIX_MAX = 12;   // bornes du nombre de reponses proposees
 const AVATARS = ['🦊','🐼','🦁','🐨','🐯','🐸','🦄','🐵','🐧','🐢','🦉','🐙'];
 
 let data = load();
@@ -276,6 +277,7 @@ function defaultProfile(){
     tempsQuestion: 10,      // secondes accordees par question
     tempsTotal: 300,        // secondes accordees pour la session
     nbQuestions: 20,
+    nbChoix: 10,            // nombre de reponses proposees par question
     recompense: 5,          // dirhams par serie sans faute
     solde: 0,
     series: 0               // nombre de sans-faute reussis
@@ -375,6 +377,8 @@ function profileCard(p){
     <div class="grid2">
       <div class="field"><label>Nombre de questions</label>
         <input type="number" data-f="nbQuestions" min="1" max="100" value="${p.nbQuestions}"></div>
+      <div class="field"><label>Réponses proposées <span class="hint">(${NB_CHOIX_MIN} à ${NB_CHOIX_MAX} par question)</span></label>
+        <input type="number" data-f="nbChoix" min="${NB_CHOIX_MIN}" max="${NB_CHOIX_MAX}" value="${nbChoix(p)}"></div>
       <div class="field"><label>Temps par question <span class="hint">(s)</span></label>
         <input type="number" data-f="tempsQuestion" min="2" max="120" value="${p.tempsQuestion}"></div>
       <div class="field"><label>Temps total <span class="hint">(min)</span></label>
@@ -433,6 +437,7 @@ function profileCard(p){
     p.nom = (g('nom').value || 'Enfant').trim().slice(0,18) || 'Enfant';
     p.min = mn; p.max = mx; p.tables = tables;
     p.nbQuestions   = Math.round(num('nbQuestions', 20, 1, 100));
+    p.nbChoix       = Math.round(num('nbChoix', 10, NB_CHOIX_MIN, NB_CHOIX_MAX));
     p.tempsQuestion = Math.round(num('tempsQuestion', 10, 2, 120));
     p.tempsTotal    = Math.round(num('ttMin', 5, 0, 60)) * 60 + Math.round(num('ttSec', 0, 0, 59));
     if(p.tempsTotal < 10) p.tempsTotal = 10;
@@ -481,25 +486,33 @@ function buildQuestions(p){
   while(list.length < p.nbQuestions){
     shuffle(combos).forEach(c => { if(list.length < p.nbQuestions) list.push(c); });
   }
+  const n = nbChoix(p);
   return list.map(([a,b]) => {
     const flip = Math.random() < .5;
-    return { a: flip ? b : a, b: flip ? a : b, r: a * b, choix: makeChoices(a, b) };
+    return { a: flip ? b : a, b: flip ? a : b, r: a * b, choix: makeChoices(a, b, n) };
   });
 }
-// 1 bonne reponse + 9 distracteurs plausibles, tries par ordre croissant
-function makeChoices(a, b){
+// Nombre de reponses proposees (profils crees avant cette option : 10 par defaut)
+function nbChoix(p){
+  const v = Math.round(parseFloat(p.nbChoix));
+  return isNaN(v) ? 10 : Math.min(NB_CHOIX_MAX, Math.max(NB_CHOIX_MIN, v));
+}
+// 1 bonne reponse + (n-1) distracteurs plausibles, tries par ordre croissant
+function makeChoices(a, b, n){
   const good = a * b, set = new Set();
+  const nbFaux = n - 1;
   const cands = [
     a*(b+1), a*(b-1), (a+1)*b, (a-1)*b, a*(b+2), a*(b-2),
     good+1, good-1, good+2, good-2, good+a, good-a, good+b, good-b,
     good+10, good-10, good+5, good-5
   ];
-  shuffle(cands).forEach(v => { if(v >= 0 && v !== good && set.size < 9) set.add(v); });
+  shuffle(cands).forEach(v => { if(v >= 0 && v !== good && set.size < nbFaux) set.add(v); });
   let guard = 0;
-  while(set.size < 9 && guard++ < 500){
+  while(set.size < nbFaux && guard++ < 500){
     const v = good + Math.floor(Math.random() * 21) - 10;
     if(v >= 0 && v !== good) set.add(v);
   }
+  for(let v = good + 1; set.size < nbFaux; v++){ set.add(v); }   // filet de securite
   return shuffle([good, ...set]).sort((x,y) => x - y);
 }
 function shuffle(arr){
@@ -566,6 +579,8 @@ function nextQuestion(){
   const box = document.getElementById('answers');
   box.className = 'answers';
   box.innerHTML = '';
+  // peu de propositions : on evite des boutons demesurement larges
+  box.style.maxWidth = (Math.min(q.choix.length, 5) * 124) + 'px';
   q.choix.forEach(v => {
     const b = document.createElement('button');
     b.className = 'ans'; b.textContent = v;

@@ -17,13 +17,14 @@ aucun serveur, aucune dépendance.
 - Temps accordé par question (en secondes)
 - Temps total accordé pour la session (minutes + secondes)
 - Nombre de questions de la session
+- Nombre de réponses proposées par question (de 2 à 12)
 - Montant de la récompense en dirhams pour chaque série réussie sans faute
 - Solde de dirhams visible et modifiable
 - Export / import des données en JSON (sauvegarde ou transfert d'appareil)
 
 **Écran enfant** (accès libre, sans code)
 - Sélection du profil, puis session de N questions
-- **10 réponses proposées** par question — l'enfant clique, il n'a rien à taper
+- **Plusieurs réponses proposées** par question (10 par défaut, réglable de 2 à 12) — l'enfant clique, il n'a rien à taper
 - Minuteur circulaire par question + minuteur de session ; le dépassement du temps total
   arrête la session et annule le sans-faute
 - Points : 3 pts si la réponse est donnée en moins de 3 s, 2 pts en moins de 6 s, 1 pt sinon ;
