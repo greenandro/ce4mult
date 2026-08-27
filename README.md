@@ -18,6 +18,7 @@ aucun serveur, aucune dépendance.
 - Temps total accordé pour la session (minutes + secondes)
 - Nombre de questions de la session
 - Nombre de réponses proposées par question (de 2 à 12)
+- Durée de la pause après une erreur, pendant laquelle la bonne réponse reste affichée (0 à 10 s)
 - Montant de la récompense en dirhams pour chaque série réussie sans faute
 - Solde de dirhams visible et modifiable
 - Export / import des données en JSON (sauvegarde ou transfert d'appareil)
@@ -29,6 +30,7 @@ aucun serveur, aucune dépendance.
   arrête la session et annule le sans-faute
 - Points : 3 pts si la réponse est donnée en moins de 3 s, 2 pts en moins de 6 s, 1 pt sinon ;
   une erreur coûte 1 point et casse la série
+- Après une erreur ou un temps écoulé, la bonne réponse s'affiche en vert pendant la durée réglée par le parent
 - Récompense versée uniquement si la session est **entièrement sans faute** dans le temps imparti
 - Animations, confettis, sons de réussite, retour visuel immédiat
 - Responsive : téléphone, tablette, ordinateur

@@ -250,6 +250,7 @@ input:focus,select:focus{outline:none; border-color:var(--violet)}
 const CODE_PARENT = '8213';
 const STORE = 'tables-magiques-v1';
 const NB_CHOIX_MIN = 2, NB_CHOIX_MAX = 12;   // bornes du nombre de reponses proposees
+const PAUSE_MIN = 0, PAUSE_MAX = 10;         // bornes de la pause apres une erreur (s)
 const AVATARS = ['🦊','🐼','🦁','🐨','🐯','🐸','🦄','🐵','🐧','🐢','🦉','🐙'];
 
 let data = load();
@@ -278,6 +279,7 @@ function defaultProfile(){
     tempsTotal: 300,        // secondes accordees pour la session
     nbQuestions: 20,
     nbChoix: 10,            // nombre de reponses proposees par question
+    pauseErreur: 1.5,       // secondes d'affichage de la bonne reponse apres une erreur
     recompense: 5,          // dirhams par serie sans faute
     solde: 0,
     series: 0               // nombre de sans-faute reussis
@@ -379,6 +381,8 @@ function profileCard(p){
         <input type="number" data-f="nbQuestions" min="1" max="100" value="${p.nbQuestions}"></div>
       <div class="field"><label>Réponses proposées <span class="hint">(${NB_CHOIX_MIN} à ${NB_CHOIX_MAX} par question)</span></label>
         <input type="number" data-f="nbChoix" min="${NB_CHOIX_MIN}" max="${NB_CHOIX_MAX}" value="${nbChoix(p)}"></div>
+      <div class="field"><label>Pause après une erreur <span class="hint">(s, affichage de la bonne réponse)</span></label>
+        <input type="number" data-f="pauseErreur" min="${PAUSE_MIN}" max="${PAUSE_MAX}" step="0.5" value="${pauseErreur(p)}"></div>
       <div class="field"><label>Temps par question <span class="hint">(s)</span></label>
         <input type="number" data-f="tempsQuestion" min="2" max="120" value="${p.tempsQuestion}"></div>
       <div class="field"><label>Temps total <span class="hint">(min)</span></label>
@@ -438,6 +442,7 @@ function profileCard(p){
     p.min = mn; p.max = mx; p.tables = tables;
     p.nbQuestions   = Math.round(num('nbQuestions', 20, 1, 100));
     p.nbChoix       = Math.round(num('nbChoix', 10, NB_CHOIX_MIN, NB_CHOIX_MAX));
+    p.pauseErreur   = num('pauseErreur', 1.5, PAUSE_MIN, PAUSE_MAX);
     p.tempsQuestion = Math.round(num('tempsQuestion', 10, 2, 120));
     p.tempsTotal    = Math.round(num('ttMin', 5, 0, 60)) * 60 + Math.round(num('ttSec', 0, 0, 59));
     if(p.tempsTotal < 10) p.tempsTotal = 10;
@@ -497,6 +502,11 @@ function nbChoix(p){
   const v = Math.round(parseFloat(p.nbChoix));
   return isNaN(v) ? 10 : Math.min(NB_CHOIX_MAX, Math.max(NB_CHOIX_MIN, v));
 }
+// Pause apres une erreur, en secondes (profils crees avant cette option : 1.5 s)
+function pauseErreur(p){
+  const v = parseFloat(p.pauseErreur);
+  return isNaN(v) ? 1.5 : Math.min(PAUSE_MAX, Math.max(PAUSE_MIN, v));
+}
 // 1 bonne reponse + (n-1) distracteurs plausibles, tries par ordre croissant
 function makeChoices(a, b, n){
   const good = a * b, set = new Set();
@@ -534,7 +544,8 @@ function startGame(id){
     p, questions: buildQuestions(p), idx: 0,
     points: 0, bonnes: 0, fautes: 0,
     debut: Date.now(), finSession: Date.now() + p.tempsTotal * 1000,
-    debutQuestion: 0, finQuestion: 0, verrou: false
+    debutQuestion: 0, finQuestion: 0, verrou: false,
+    pauseKO: Math.round(pauseErreur(p) * 1000)   // pause apres une erreur, en ms
   };
   document.getElementById('hudName').textContent = p.avatar + ' ' + p.nom;
   buildStreak(G.questions.length);
@@ -636,7 +647,7 @@ function answer(btn, val){
   markStreak(G.idx, juste);
   document.getElementById('hudScore').textContent = '⭐ ' + G.points;
   G.idx++;
-  setTimeout(nextQuestion, juste ? 620 : 1100);
+  setTimeout(nextQuestion, juste ? 620 : G.pauseKO);
 }
 
 function timeout(){
@@ -648,7 +659,7 @@ function timeout(){
   flash('⏰'); beep(200,.3);
   markStreak(G.idx, false);
   G.idx++;
-  setTimeout(nextQuestion, 1100);
+  setTimeout(nextQuestion, G.pauseKO);
 }
 
 function showGood(r){
